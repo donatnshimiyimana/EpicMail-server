@@ -8,14 +8,14 @@ const newUser = {
 const falseNewUser = {
   firstname: "Sabrina",
   lastname: "Mihigo",
-  email: "mihigisabrina@gmail.com",
+  email: "mihigisabrina@.com",
   password: "1234",
 };
 
 const falseNewUser2 = {
   firstname: "",
   lastname: "Mihigo",
-  email: "mihigisabrina@gmail.com",
+  email: "mihigisabrina@gmail.",
   password: "1234",
 };
 
