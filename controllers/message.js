@@ -1,8 +1,8 @@
 import Joi from "joi";
 import moment from "moment";
-import Message from "../models/message";
 import dummy from "../models/dummy";
 import validate from "../middleware/validate";
+// import messagee from "../models/message";
 
 const messages = {
   /**
@@ -20,48 +20,60 @@ const messages = {
       }, validate.messageSchema,
     );
     if (error) {
-      res.status(400).json({ error: error.details[0].message });
-    } else {
-      const trueSender = dummy.contacts.filter(sender => sender.id === senderId);
-      const trueReceiver = dummy.contacts.filter(receiver => receiver.id === receiverId);
-
-      if (trueSender.length === 0) {
-        res.status(404).json({
-          status: 404,
-          error: "the sender is not registered",
-        });
-      } else if (trueReceiver.length === 0) {
-        res.status(404).json({
-          status: 404,
-          error: "the receiver is not registered",
-        });
-      } else if (senderId === receiverId) {
-        res.status(400).json({
-          status: 400,
-          error: "the sender id and receiver id must not be the same",
-        });
-      } else {
-        const id = dummy.messages.length + 1;
-        const createdOn = moment().format("LL");
-        const messagee = new Message(
-          id, createdOn, subject, message, senderId, receiverId, parentMessageId, status,
-        );
-        dummy.messages.push(messagee);
-        if (status === "sent") {
-          res.status(201).json({
-            status: 201, success: "email sent", data: [messagee],
-          });
-        } else if (status === "draft") {
-          res.status(201).json({
-            status: 201, success: "email drafted", data: [messagee],
-          });
-        } else {
-          res.status(201).json({
-            status: 201, success: "email read", data: [messagee],
-          });
-        }
-      }
+      return res.status(400).json({ error: error.details[0].message });
     }
+    const trueSender = dummy.contacts.filter(sender => sender.id === senderId);
+    const trueReceiver = dummy.contacts.filter(receiver => receiver.id === receiverId);
+
+    if (trueSender.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        error: "the sender is not registered",
+      });
+    } if (trueReceiver.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        error: "the receiver is not registered",
+      });
+    } if (senderId === receiverId) {
+      return res.status(400).json({
+        status: 400,
+        error: "the sender id and receiver id must not be the same",
+      });
+    }
+    const id = dummy.messages.length + 1;
+    const createdOn = moment().format("LL");
+    const newMessage = {
+      id,
+      subject,
+      message,
+      senderId,
+      receiverId,
+      parentMessageId,
+      status,
+      createdOn,
+
+    }
+    dummy.messages.push(newMessage);
+
+    console.log(newMessage);
+
+    if (status === "sent") {
+      return res.status(201).json({
+        status: 201, success: "email sent", data:[newMessage],
+      });
+    } if (status === "draft") {
+      return res.status(201).json({
+        status: 201, success: "email drafted", data: [newMessage],
+      });
+    } 
+
+    return res.status(201).json({
+        status: 201, success: "email read", data: [newMessage],
+      });
+    
+      
+    
   },
 
   /**
