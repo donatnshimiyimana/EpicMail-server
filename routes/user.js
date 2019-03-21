@@ -1,9 +1,10 @@
+/* eslint-disable no-undef */
 import express from "express";
-import controller from "../controllers/user";
+import Controller from "../controllers/user";
 
 const router = express.Router();
 
-router.post("/auth/signup", controller.registerUser);
-router.post("/auth/login", controller.loginUser);
+router.post("/auth/signup", Controller.register);
+router.post("/auth/login", Controller.login);
 
 export default router;
