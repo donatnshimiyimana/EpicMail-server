@@ -1,82 +1,65 @@
-import Joi from "joi";
-import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
-import User from "../models/user";
-import dummy from "../models/dummy";
-import validate from "../middleware/validate";
+/* eslint-disable import/no-unresolved */
+/* eslint consistent-return: 0 */
+import Users from '../models/user';
+import Auth from '../helpers/auth';
+import Pool from '../database/index';
 
-const users = {
-  /**
-   * User Registration
-   * @param {object} req
-   * @param {object} res
-   */
-  registerUser(req, res) {
-    const {
-      firstname, lastname, email, password,
-    } = req.body;
-    const { error } = Joi.validate(
-      {
-        firstname, lastname, email, password,
-      }, validate.userSchema,
-    );
-    if (error) {
-      res.status(400).json({ error: error.details[0].message });
-    } else {
-      const id = dummy.users.length + 1;
-      const user = new User(
-        id, firstname, lastname, email, password,
-      );
-      const hash = bcrypt.hashSync(user.password, 10);
-      user.password = hash;
-      const token = jwt.sign({ user: dummy.users.push(user) }, "secret-key");
-      res.status(201).json({
-        status: 201, success: "user registered", data: [{ token, user }],
-      });
-    }
-  },
-
-  /**
-   * User Login
-   * @param {object} req
-   * @param {object} res
-   */
-  loginUser(req, res) {
-    const {
-      email, password,
-    } = req.body;
-
-    const { error } = Joi.validate({
-      email, password,
-    }, validate.loginSchema);
-    if (error) {
-      res.status(400).json({ error: error.details[0].message });
-    } else {
-      for (let i = 0; i < dummy.users.length; i++) {
-        if (dummy.users[i].email === email) {
-          const { firstname } = dummy.users[i];
-          const { lastname } = dummy.users[i];
-          // eslint-disable-next-line no-shadow
-          const { email } = dummy.users[i];
-          const truePass = bcrypt.compareSync(password, dummy.users[i].password);
-          if (truePass) {
-            const token = jwt.sign({ user: dummy.users[i] }, "secret-key", { expiresIn: "1h" });
-            res.status(200).json({
-              status: 200,
-              success: "logged in",
-              data: [{
-                token, firstname, lastname, email,
-              }],
-            });
-          } else {
-            res.status(400).json({ status: 400, error: "incorrect password" });
-          }
-          return;
-        }
+class User {
+  // Register the User
+  static async register(req, res) {
+    const newUser = Users.createUser(req.body);
+    const token = Auth.generateToken(req.body.id);
+    newUser.then((user) => {
+      if (!user) {
+        return res.status(400).send({
+          status: 400,
+          error: 'user exists',
+        });
       }
-      res.status(400).json({ status: 400, error: "invalid email" });
-    }
-  },
-};
+      return res.status(201).send({
+        status: 201,
+        data: [{
+          token,
+          user,
+        }],
+      });
+    });
+  }
 
-export default users;
+  // login the user
+  static async login(req, res) {
+    const { email, password } = req.body;
+    const queryText = ' SELECT * FROM users WHERE email = $1';
+    const data = [email];
+    Pool.query(queryText, data)
+      .then((response) => {
+        if (!response) {
+          return res.status(404).send({
+            status: 404,
+            error: 'User not found',
+          });
+        }
+        const checkPassword = Auth.passwordCompare(response.rows[0].password, password);
+        if (checkPassword) {
+          const payload = {
+            id: res.id,
+            email: res.email,
+            isadmin: res.isadmin,
+          };
+          const token = Auth.generateToken(payload);
+          return res.status(200).send({
+            status: 200,
+            token,
+            user: response.rows[0],
+          });
+        }
+      // eslint-disable-next-line no-unused-vars
+      }).catch(() => {
+        res.status(500).send({
+          status: 500,
+          error: 'internal server error',
+        });
+      });
+  }
+}
+export default User;

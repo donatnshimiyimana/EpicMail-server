@@ -53,27 +53,24 @@ const messages = {
       status,
       createdOn,
 
-    }
+    };
     dummy.messages.push(newMessage);
 
     console.log(newMessage);
 
     if (status === "sent") {
       return res.status(201).json({
-        status: 201, success: "email sent", data:[newMessage],
+        status: 201, success: "email sent", data: [newMessage],
       });
     } if (status === "draft") {
       return res.status(201).json({
         status: 201, success: "email drafted", data: [newMessage],
       });
-    } 
+    }
 
     return res.status(201).json({
-        status: 201, success: "email read", data: [newMessage],
-      });
-    
-      
-    
+      status: 201, success: "email read", data: [newMessage],
+    });
   },
 
   /**
